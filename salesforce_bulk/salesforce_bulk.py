@@ -478,7 +478,7 @@ class SalesforceBulk(object):
                 logger('Loading bulk result #{0}'.format(i))
             yield line
 
-    def get_batch_result_iter(self, job_id, batch_id, parse_csv=False,
+    def get_batch_result_iter(self, job_id, batch_id, parse_csv=False, query_job=False,
                               logger=None):
         """
         Return a line interator over the contents of a batch result document. If
@@ -502,11 +502,12 @@ class SalesforceBulk(object):
             "/job/%s/batch/%s/result" % (job_id, batch_id)
         r = requests.get(uri, headers=self.headers(), stream=True)
 
-        result_id = r.text.split("<result>")[1].split("</result>")[0]
-
-        uri = self.endpoint + \
-            "/job/%s/batch/%s/result/%s" % (job_id, batch_id, result_id)
-        r = requests.get(uri, headers=self.headers(), stream=True)
+        if query_job == True:
+            #https://github.com/heroku/salesforce-bulk/issues/20
+            result_id = r.text.split("<result>")[1].split("</result>")[0]
+            uri = self.endpoint + \
+                "/job/%s/batch/%s/result/%s" % (job_id, batch_id, result_id)
+            r = requests.get(uri, headers=self.headers(), stream=True)
 
         if parse_csv:
             return csv.DictReader(r.iter_lines(chunk_size=2048), delimiter=",",
